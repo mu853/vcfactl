@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/spf13/viper"
@@ -65,7 +66,7 @@ func doHTTPRequest(method string, path string, payload []byte) ([]byte, error) {
 	if strings.HasPrefix(path, "/iaas/api/") || strings.HasPrefix(path, "/relocation/") {
 		req.Header.Set("Accept", "application/json")
 	} else {
-		req.Header.Set("Accept", "application/json;version=37.0")
+		req.Header.Set("Accept", "application/json;version=40.0")
 	}
 
 	tr := &http.Transport{
@@ -88,9 +89,15 @@ func doHTTPRequest(method string, path string, payload []byte) ([]byte, error) {
 	return body, nil
 }
 
+func printDebug(format string, a ...interface{}) {
+	if viper.GetBool("debug") {
+		fmt.Fprintf(os.Stderr, format, a...)
+	}
+}
+
 // 汎用API実行 (生のJSONを出力)
 func ExecuteAPI(method string, path string, payload []byte) {
-	fmt.Printf("Executing %s %s...\n", method, viper.GetString("provider.endpoint")+path)
+	printDebug("Executing %s %s...\n", method, viper.GetString("provider.endpoint")+path)
 
 	body, err := doHTTPRequest(method, path, payload)
 	if err != nil {
@@ -122,7 +129,7 @@ func ExecuteResourceGet(resource string) {
 		return
 	}
 
-	fmt.Printf("Fetching resource: %s (API: GET %s)\n", resource, path)
+	printDebug("Fetching resource: %s (API: GET %s)\n", resource, path)
 	body, err := doHTTPRequest("GET", path, nil)
 	if err != nil {
 		fmt.Println(err)
@@ -170,7 +177,7 @@ func ExecuteResourceGet(resource string) {
 // JSONの整形出力
 func PrintPrettyJSON(data []byte) {
 	if len(data) == 0 {
-		fmt.Println("(No Content)")
+		printDebug("(No Content)\n")
 		return
 	}
 	var prettyJSON bytes.Buffer
