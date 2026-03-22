@@ -1,4 +1,4 @@
-module github.com/mu853/vcdctl
+module vcfactl
 
 go 1.20
 
